@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'models/rate_detail_args.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/rate_detail_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/splash_screen.dart';
 
 void runCurrencyApp() {
@@ -63,6 +65,8 @@ class CurrencyCompassApp extends StatelessWidget {
       initialRoute: SplashScreen.routeName,
       routes: {
         SplashScreen.routeName: (_) => const SplashScreen(),
+        LoginScreen.routeName: (_) => const LoginScreen(),
+        RegisterScreen.routeName: (_) => const RegisterScreen(),
         HomeScreen.routeName: (_) => const HomeScreen(),
       },
       onGenerateRoute: (settings) {

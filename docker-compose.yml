@@ -1,0 +1,38 @@
+services:
+  auth-api:
+    build:
+      context: ./backend/auth-api
+      dockerfile: Dockerfile
+    container_name: currency-auth-api
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./backend/auth-api/.env
+    environment:
+      - PORT=4000
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: currency-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-api:4000
+    depends_on:
+      - auth-api
+    restart: unless-stopped
+
+  flutter-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: currency-flutter-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
