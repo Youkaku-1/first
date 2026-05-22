@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/currency_rates.dart';
 import '../models/saved_conversion.dart';
 import '../services/currency_api_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/glass_card.dart';
 
 class ConverterScreen extends StatefulWidget {
   const ConverterScreen({super.key, required this.onSave});
@@ -47,38 +49,25 @@ class _ConverterScreenState extends State<ConverterScreen> {
     try {
       final rates = await _apiService.fetchLatestRates('USD');
       final availableCodes = rates.sortedCodes();
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
         _currencyRates = rates;
-        if (!availableCodes.contains(_toCurrency) && availableCodes.isNotEmpty) {
+        if (!availableCodes.contains(_toCurrency) &&
+            availableCodes.isNotEmpty) {
           _toCurrency = availableCodes.first;
         }
       });
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _loadError = error.toString();
-      });
+      if (!mounted) return;
+      setState(() => _loadError = error.toString());
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingCurrencies = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingCurrencies = false);
     }
   }
 
   Future<void> _convertCurrency() async {
     final form = _formKey.currentState;
-    if (form == null || !form.validate()) {
-      return;
-    }
+    if (form == null || !form.validate()) return;
 
     setState(() {
       _isConverting = true;
@@ -89,64 +78,29 @@ class _ConverterScreenState extends State<ConverterScreen> {
       final rates = await _apiService.fetchLatestRates(_fromCurrency);
       final parsedAmount = double.parse(_amountController.text.trim());
       final rate = rates.rates[_toCurrency];
-
       if (rate == null) {
         throw Exception('The selected currency is not available right now.');
       }
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _convertedAmount = parsedAmount * rate;
-      });
+      if (!mounted) return;
+      setState(() => _convertedAmount = parsedAmount * rate);
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _loadError = error.toString();
-        _convertedAmount = null;
-      });
+      if (!mounted) return;
+      setState(() => _loadError = error.toString());
     } finally {
-      if (mounted) {
-        setState(() {
-          _isConverting = false;
-        });
-      }
+      if (mounted) setState(() => _isConverting = false);
     }
-  }
-
-  void _swapCurrencies() {
-    setState(() {
-      final temp = _fromCurrency;
-      _fromCurrency = _toCurrency;
-      _toCurrency = temp;
-    });
   }
 
   Future<void> _saveConversion() async {
-    final form = _formKey.currentState;
-    if (form == null || !form.validate()) {
-      return;
-    }
-
-    final convertedAmount = _convertedAmount;
-    if (convertedAmount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Run a conversion before saving it.')),
-      );
-      return;
-    }
+    final converted = _convertedAmount;
+    if (converted == null) return;
 
     final item = SavedConversion(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       amount: double.parse(_amountController.text.trim()),
       fromCurrency: _fromCurrency,
       toCurrency: _toCurrency,
-      convertedAmount: convertedAmount,
+      convertedAmount: converted,
       createdAtIso: DateTime.now().toIso8601String(),
     );
 
@@ -155,209 +109,259 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingCurrencies) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final rates = _currencyRates;
+    final codes = rates?.sortedCodes() ?? const <String>[];
 
-    if (_loadError != null && _currencyRates == null) {
-      return _ErrorState(
-        message: _loadError!,
-        onRetry: _loadSupportedCurrencies,
-      );
-    }
-
-    final currencyCodes = _currencyRates?.sortedCodes() ?? <String>[];
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF12355B), Color(0xFF1B998B)],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.public, color: Color(0xFF12355B)),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Live currency conversion',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+      children: [
+        GlassCard(
+          dark: true,
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-                const SizedBox(height: 14),
-                RichText(
-                  text: const TextSpan(
-                    style: TextStyle(color: Colors.white),
-                    children: [
-                      TextSpan(
-                        text: 'Simple app, full rubric: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text: 'form validation, API conversion, navigation, and local CRUD.',
-                      ),
-                    ],
+                decoration: BoxDecoration(
+                  color: AppTheme.lime,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'LIVE CONVERTER',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.bgDark,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount',
-                        prefixIcon: Icon(Icons.numbers),
-                      ),
-                      validator: (value) {
-                        final parsed = double.tryParse((value ?? '').trim());
-                        if (parsed == null || parsed <= 0) {
-                          return 'Enter a valid amount greater than zero.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _fromCurrency,
-                            decoration: const InputDecoration(labelText: 'From'),
-                            items: currencyCodes
-                                .map(
-                                  (code) => DropdownMenuItem<String>(
-                                    value: code,
-                                    child: Text(code),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _fromCurrency = value;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          onPressed: _swapCurrencies,
-                          icon: const Icon(Icons.swap_horiz),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _toCurrency,
-                            decoration: const InputDecoration(labelText: 'To'),
-                            items: currencyCodes
-                                .map(
-                                  (code) => DropdownMenuItem<String>(
-                                    value: code,
-                                    child: Text(code),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _toCurrency = value;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isConverting ? null : _convertCurrency,
-                            icon: _isConverting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.calculate),
-                            label: Text(_isConverting ? 'Converting...' : 'Convert'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _saveConversion,
-                            icon: const Icon(Icons.save),
-                            label: const Text('Save'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Convert money with a futuristic trading card layout.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 27,
+                  fontWeight: FontWeight.w900,
+                  height: 1.1,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (_loadError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _loadError!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 10),
+              Text(
+                'Rates update from the currency API service.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.68),
+                  fontSize: 14,
+                ),
               ),
-            ),
-          Card(
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        if (_isLoadingCurrencies)
+          const Center(
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_loadError != null && rates == null)
+          _ErrorState(message: _loadError!, onRetry: _loadSupportedCurrencies)
+        else
+          GlassCard(
+            child: Form(
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Result',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    'Amount',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    _convertedAmount == null
-                        ? 'No conversion yet.'
-                        : '${_amountController.text.trim()} $_fromCurrency = ${_convertedAmount!.toStringAsFixed(2)} $_toCurrency',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  TextFormField(
+                    controller: _amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.payments_rounded),
+                      hintText: '0.00',
+                    ),
+                    validator: (value) {
+                      final parsed = double.tryParse(value?.trim() ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'Enter a valid positive amount';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _CurrencyDropdown(
+                          label: 'From',
+                          value: _fromCurrency,
+                          codes: codes,
+                          onChanged: (v) => setState(() => _fromCurrency = v),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: CircleAvatar(
+                          backgroundColor: AppTheme.bgDark,
+                          child: IconButton(
+                            onPressed: () => setState(() {
+                              final temp = _fromCurrency;
+                              _fromCurrency = _toCurrency;
+                              _toCurrency = temp;
+                            }),
+                            icon: const Icon(
+                              Icons.swap_horiz_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _CurrencyDropdown(
+                          label: 'To',
+                          value: _toCurrency,
+                          codes: codes,
+                          onChanged: (v) => setState(() => _toCurrency = v),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: _isConverting ? null : _convertCurrency,
+                      icon: _isConverting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.bolt_rounded),
+                      label: const Text('Convert Now'),
+                    ),
                   ),
                 ],
               ),
             ),
+          ),
+        if (_convertedAmount != null) ...[
+          const SizedBox(height: 18),
+          _ResultCard(
+            amount: _amountController.text,
+            from: _fromCurrency,
+            to: _toCurrency,
+            convertedAmount: _convertedAmount!,
+            onSave: _saveConversion,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CurrencyDropdown extends StatelessWidget {
+  const _CurrencyDropdown({
+    required this.label,
+    required this.value,
+    required this.codes,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String value;
+  final List<String> codes;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: codes.contains(value) ? value : null,
+      decoration: InputDecoration(labelText: label),
+      items: codes
+          .map(
+            (code) => DropdownMenuItem(
+              value: code,
+              child: Text(
+                code,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value != null) onChanged(value);
+      },
+    );
+  }
+}
+
+class _ResultCard extends StatelessWidget {
+  const _ResultCard({
+    required this.amount,
+    required this.from,
+    required this.to,
+    required this.convertedAmount,
+    required this.onSave,
+  });
+
+  final String amount;
+  final String from;
+  final String to;
+  final double convertedAmount;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      dark: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$amount $from equals',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.70),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${convertedAmount.toStringAsFixed(2)} $to',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: onSave,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.lime,
+              side: const BorderSide(color: AppTheme.lime),
+            ),
+            icon: const Icon(Icons.bookmark_add_rounded),
+            label: const Text('Save this conversion'),
           ),
         ],
       ),
@@ -369,22 +373,18 @@ class _ErrorState extends StatelessWidget {
   const _ErrorState({required this.message, required this.onRetry});
 
   final String message;
-  final Future<void> Function() onRetry;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return GlassCard(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off, size: 42),
+          const Icon(Icons.wifi_off_rounded, size: 44, color: AppTheme.danger),
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: onRetry,
-            child: const Text('Retry'),
-          ),
+          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

@@ -3,44 +3,41 @@ import 'package:flutter/material.dart';
 class PrimaryAuthButton extends StatelessWidget {
   const PrimaryAuthButton({
     super.key,
-    required this.text,
-    required this.isLoading,
+    required this.label,
     required this.onPressed,
+    this.isLoading = false,
+    this.icon = Icons.arrow_forward_rounded,
   });
 
-  final String text;
-  final bool isLoading;
+  final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+    return SizedBox(
       width: double.infinity,
-      height: 54,
+      height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: isLoading
-              ? const SizedBox(
-                  key: ValueKey('loading'),
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(
-                  text,
-                  key: const ValueKey('text'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
                 ),
-        ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label),
+                  const SizedBox(width: 10),
+                  Icon(icon, size: 20),
+                ],
+              ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class CustomAuthTextField extends StatelessWidget {
   const CustomAuthTextField({
     super.key,
@@ -8,7 +10,6 @@ class CustomAuthTextField extends StatelessWidget {
     required this.icon,
     this.keyboardType,
     this.obscureText = false,
-    this.suffixIcon,
     this.validator,
   });
 
@@ -17,22 +18,25 @@ class CustomAuthTextField extends StatelessWidget {
   final IconData icon;
   final TextInputType? keyboardType;
   final bool obscureText;
-  final Widget? suffixIcon;
   final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          suffixIcon: suffixIcon,
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      validator: validator,
+      style: const TextStyle(fontWeight: FontWeight.w700),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: AppTheme.violet.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: AppTheme.violet),
         ),
       ),
     );

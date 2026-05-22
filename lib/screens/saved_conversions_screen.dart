@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/saved_conversion.dart';
 import '../services/saved_conversion_storage.dart';
+import '../theme/app_theme.dart';
+import '../widgets/glass_card.dart';
 
 class SavedConversionsScreen extends StatefulWidget {
   const SavedConversionsScreen({super.key, required this.version});
@@ -26,94 +28,17 @@ class _SavedConversionsScreenState extends State<SavedConversionsScreen> {
   @override
   void didUpdateWidget(covariant SavedConversionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.version != widget.version) {
-      _loadItems();
-    }
+    if (oldWidget.version != widget.version) _loadItems();
   }
 
   Future<void> _loadItems() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     final items = await _storage.getAll();
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     setState(() {
       _items = items;
       _isLoading = false;
     });
-  }
-
-  Future<void> _editItem(SavedConversion item) async {
-    final amountController = TextEditingController(
-      text: item.amount.toStringAsFixed(2),
-    );
-    final formKey = GlobalKey<FormState>();
-
-    final updated = await showDialog<SavedConversion>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit saved conversion'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Amount'),
-                  validator: (value) {
-                    final parsed = double.tryParse((value ?? '').trim());
-                    if (parsed == null || parsed <= 0) {
-                      return 'Enter a valid amount.';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (!formKey.currentState!.validate()) {
-                  return;
-                }
-
-                final newAmount = double.parse(amountController.text.trim());
-                final newConvertedAmount = item.convertedAmount * (newAmount / item.amount);
-
-                Navigator.of(context).pop(
-                  item.copyWith(
-                    amount: newAmount,
-                    convertedAmount: newConvertedAmount,
-                  ),
-                );
-              },
-              child: const Text('Update'),
-            ),
-          ],
-        );
-      },
-    );
-
-    amountController.dispose();
-
-    if (updated == null) {
-      return;
-    }
-
-    await _storage.update(updated);
-    await _loadItems();
   }
 
   Future<void> _deleteItem(SavedConversion item) async {
@@ -123,76 +48,141 @@ class _SavedConversionsScreenState extends State<SavedConversionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.bookmarks_outlined, size: 42),
-            SizedBox(height: 12),
-            Text('No saved conversions yet.'),
-            SizedBox(height: 8),
-            Text('Create one from the converter screen to demonstrate CRUD.'),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadItems,
-      child: ListView.builder(
-        itemCount: _items.length,
-        itemBuilder: (context, index) {
-          final item = _items[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+      children: [
+        GlassCard(
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: AppTheme.violet.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.bookmarks_rounded,
+                  color: AppTheme.violet,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${item.fromCurrency} to ${item.toCurrency}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => _editItem(item),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                        IconButton(
-                          onPressed: () => _deleteItem(item),
-                          icon: const Icon(Icons.delete_outline),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
                     Text(
-                      '${item.amount.toStringAsFixed(2)} ${item.fromCurrency} = ${item.convertedAmount.toStringAsFixed(2)} ${item.toCurrency}',
+                      'Saved conversions',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                    const SizedBox(height: 8),
                     Text(
-                      'Saved on ${item.createdAtIso.substring(0, 10)}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      'Stored locally on this device.',
+                      style: TextStyle(color: AppTheme.muted),
                     ),
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (_isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(44),
+              child: CircularProgressIndicator(),
             ),
-          );
-        },
-      ),
+          )
+        else if (_items.isEmpty)
+          GlassCard(
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.inbox_rounded,
+                  size: 48,
+                  color: AppTheme.muted,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'No saved conversions yet',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Convert a currency and press save to see it here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black.withValues(alpha: 0.55)),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._items.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Dismissible(
+                key: ValueKey(item.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 22),
+                  decoration: BoxDecoration(
+                    color: AppTheme.danger,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Icon(Icons.delete_rounded, color: Colors.white),
+                ),
+                onDismissed: (_) => _deleteItem(item),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppTheme.bgDark,
+                        child: Text(
+                          item.fromCurrency.characters.first,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${item.amount.toStringAsFixed(2)} ${item.fromCurrency} â†’ ${item.convertedAmount.toStringAsFixed(2)} ${item.toCurrency}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Saved on ${item.createdAtIso.substring(0, 10)}',
+                              style: const TextStyle(
+                                color: AppTheme.muted,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _deleteItem(item),
+                        icon: const Icon(Icons.delete_outline_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+      ],
     );
   }
 }

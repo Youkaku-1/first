@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+import 'brand_mark.dart';
+
 class AuthHeader extends StatelessWidget {
   const AuthHeader({
     super.key,
@@ -14,51 +17,54 @@ class AuthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const mainColor = Color(0xFF0B6E4F);
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.6, end: 1),
-          duration: const Duration(milliseconds: 700),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            return Transform.scale(
-              scale: value,
-              child: child,
-            );
-          },
-          child: Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: mainColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(24),
+        Row(
+          children: [
+            const BrandMark(size: 58),
+            const SizedBox(width: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.bgDark,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: AppTheme.lime),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Secure Access',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Icon(
-              icon,
-              size: 42,
-              color: mainColor,
-            ),
-          ),
+          ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 26),
         Text(
           title,
-          textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
+            fontSize: 34,
+            fontWeight: FontWeight.w900,
+            height: 1.04,
+            color: AppTheme.ink,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           subtitle,
-          textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Colors.black54,
-            fontSize: 14,
-            height: 1.4,
+            color: AppTheme.muted,
+            fontSize: 15,
+            height: 1.55,
           ),
         ),
       ],
